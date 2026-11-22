@@ -2,7 +2,7 @@
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "repo-craft",
   "version": "0.0.1",
-  "description": "面向 Codex 与 Claude Code 的仓库工作流：提示词润色、并行调查、项目文档与规则维护、项目约束管理。",
+  "description": "面向 Codex 与 Claude Code 的仓库工作流：提示词润色、审查修复循环目标、并行调查、项目文档与规则维护、项目约束管理。",
   "author": {
     "name": "coachpo",
     "url": "https://github.com/coachpo"
@@ -24,7 +24,7 @@
       "interface": {
         "displayName": "Repo Craft",
         "shortDescription": "从任务提示词、仓库调查到项目文档、规则与约束管理",
-        "longDescription": "面向在 Codex 或 Claude Code 中维护代码仓库的开发者。四项技能可分别使用：把任务初稿改写成可交接的提示词；把仓库问题拆成独立方向并行只读调查；初始化和维护固定文档结构与 AGENTS.md 层级；把用户选定的项目约束登记进 CONSTRAINTS.md，并在用户同意提案后变更。插件只提供技能指令、模板和一个只读调研子代理，不注册服务、钩子或凭据，也不授予额外操作权限；写入只在用户请求实现或同意提案后进行。",
+        "longDescription": "面向在 Codex 或 Claude Code 中维护代码仓库的开发者。五项技能可分别使用：把任务初稿改写成可交接的提示词；为审查并修复的循环生成可在两个宿主运行的 /goal 命令；把仓库问题拆成独立方向并行只读调查；初始化和维护固定文档结构与 AGENTS.md 层级；把用户选定的项目约束登记进 CONSTRAINTS.md，并在用户同意提案后变更。插件只提供技能指令、模板和一个只读调研子代理，不注册服务、钩子或凭据，也不授予额外操作权限；写入只在用户请求实现或同意提案后进行。",
         "developerName": "coachpo",
         "capabilities": ["Read", "Write"],
         "category": "Productivity",
