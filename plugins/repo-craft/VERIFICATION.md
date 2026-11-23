@@ -4,7 +4,7 @@
 
 ## 方法
 
-- **隔离样例**：在暂存目录建 Git 项目，用 Claude Code 2.1.322 的无界面会话（`claude -p`，模型 `claude-sonnet-5-5`，`--permission-mode acceptEdits`）以 `--plugin-dir` 加载插件源码，用 `--add-dir` 允许读取插件目录。精简标准试跑另用 macOS `sandbox-exec` 对子进程禁止写入源码和安装缓存。初始化事件确认插件路径。需要接续对话的旧场景用 `--resume`，检验再次维护时另开会话。
+- **隔离样例**：在暂存目录建 Git 项目，用 Claude Code 2.1.322 的无界面会话（`claude -p`，模型 `claude-sonnet-5-5`，`--permission-mode acceptEdits`）以 `--plugin-dir` 加载插件源码，用 `--add-dir` 允许读取插件目录。精简标准和外部链接试跑另用 macOS `sandbox-exec` 对子进程禁止写入源码和安装缓存。初始化事件确认插件路径。需要接续对话的旧场景用 `--resume`，检验再次维护时另开会话。
 - **产物核对**：用 `git status`、`git diff`、`cmp` 和临时脚本检查产物：按条款比对模板、按索引格式的核对清单检查 `CONSTRAINTS.md`、解析相对链接和锚点。
 - **宿主发现**：Claude Code 用 `claude plugin validate`；Codex 用 Codex CLI 0.167.0 在空白的临时 `CODEX_HOME` 下添加本地市场并 `codex plugin list`。
 - **局限**：机器的用户级指令和设置照常加载，没有隔离；样例都是只有几份文件的小项目；执行者是同一个模型家族；这是按源码路径执行，不是安装后的自然语言路由。
@@ -13,7 +13,7 @@
 
 ### 打包与宿主发现
 
-- 精简标准改动后在仓库根运行 `claude plugin validate plugins/repo-craft` 和 `claude plugin validate .`，均输出 `✔ Validation passed`。同次运行 `python3 ~/.claude/plugins/marketplaces/claude-plugins-official/plugins/skill-creator/skills/skill-creator/scripts/quick_validate.py plugins/repo-craft/skills/maintain-docs-and-rules`，输出 `Skill is valid!`。
+- 0.0.3 在仓库根运行 `claude plugin validate plugins/repo-craft` 和 `claude plugin validate .`，均输出 `✔ Validation passed`。同次运行 `python3 ~/.claude/plugins/marketplaces/claude-plugins-official/plugins/skill-creator/skills/skill-creator/scripts/quick_validate.py plugins/repo-craft/skills/maintain-docs-and-rules`，输出 `Skill is valid!`。解析两份清单确认版本均为 `0.0.3`。
 - 两份插件清单均可解析，共有字段逐项相同。Claude Code 要求 512 至 2048 像素的正方形 PNG 图标，`assets/icon.png` 是由 `assets/repo-craft.svg` 渲染的 1024 × 1024 版本；`.claude-plugin/plugin.json` 的 `icon` 只供官方目录展示，Claude Code 加载时不读。Codex 的 `logo` 和 `composerIcon` 使用 SVG（正方形 128 × 128）。
 - Codex CLI 0.167.0 添加本地市场后，`codex plugin list` 列出 `repo-craft@coachpo`。
 - Skill Creator 的 `quick_validate.py` 对 `constraint-manager`、`maintain-docs-and-rules`、`investigate-repo` 通过。`polish-prompt` 因 `disable-model-invocation` 不在该校验器接受的通用字段内而失败：这个字段是 Claude Code 仅显式调用所需的，保留不改。
@@ -26,7 +26,27 @@
 
 ### `maintain-docs-and-rules`
 
-#### 精简标准
+#### 外部链接（0.0.3）
+
+在隔离样例根目录运行 `claude -p --model claude-sonnet-5-5 --permission-mode acceptEdits --plugin-dir <插件源码目录> --add-dir <插件源码目录> --no-session-persistence --strict-mcp-config --verbose --output-format stream-json -- '<技能调用和请求>'`，显式调用 `/repo-craft:maintain-docs-and-rules`。从初始化事件核对 Claude Code 2.1.322、模型和 `repo-craft@inline` 的源码路径，从最终回复与实际文件分别核对交接和改动。
+
+维护与只读审查从同一初始提交的副本开始。README 有六条外部链接，artifact 旁记录了与设计的已知偏差，另外三条违规链接各自只占一句。初始化样例仅含同一份 README。旧模板样例用 `git show` 取出 `c38fd18` 的两份模板，配齐占位文档和空 ADR 目录。提示只指定任务和范围，未列出要移除或保留的链接。
+
+共 9 次独立会话，退出码均为 0。初稿跑了初始化、维护、只读审查和旧模板升级各 1 次。前三份报告能区分四个违规链接，但缩写了地址。交接格式明确要求完整原链接或路径后，重跑这四项，并增加同提示再次维护，共 5 次。定稿试跑放行了 `cmp`、`diff`，初始化还放行了复制贡献模板和创建 ADR 目录的命令。
+
+| 场景 | 定稿试跑结果 |
+| --- | --- |
+| 初始化 | 移除 artifact、Agent 线程、设计分享和仓库外本机路径，保留偏差原句、官方文档和法规链接。交接列出四个完整原地址，说明偏差所在小节及三处整句删除，并列出未核实的设计依据。`CONTRIBUTING.md` 与新模板逐字节一致。 |
+| 维护 | `git diff` 只有 README 改动。交接将完整 artifact 链接对应到 README 的“当前限制”，其余三个完整链接或路径各标“整句删除”。保留的两条链接均已按类型核对，设计依据列为疑点。 |
+| 同提示再次维护 | 在样例内提交首次维护结果，用相同提示“维护本项目的整套文档，直接更新仓库并交接结果。”另开会话。`git status --porcelain=v1 -uall` 无输出，`git diff --exit-code` 退出 0。 |
+| 只读审查 | 报告逐项列出四个完整原地址为拟删项、两条公开资料为保留项。工具记录只有只读操作，`git status --porcelain=v1 -uall` 无输出。 |
+| 0.0.2 模板再次维护 | 贡献指南的“文档”小节新增一条，`git diff --stat` 为 `1 file changed, 1 insertion(+)`。两份文件各自与新版模板 `cmp` 均退出 0，新条款仅出现一次，交接没有冲突询问。 |
+
+定稿的只读审查和旧模板升级都误报 `docs/adr/` 原本缺失。实际样例已预建该空目录。逐项核对工具调用，初始化、维护和审查均未登录或打开会话链接。
+
+措辞修订后，允许类别从“项目自有的公开主机和仓库”改为“项目自有的主机和代码仓库（含私有仓库）”，并把第三方平台的控制台或仪表盘列为受限材料。按同一方法另跑维护 1 次，退出码 0。样例的 `package.json` 用 `repository` 指向 `github.com/acme/widget`，并配齐固定文档、与新模板一致的 `CONTRIBUTING.md` 和空 ADR 目录。README 链接了项目仓库及其中一个 issue、Stripe 官方文档、`localhost` 地址、Stripe 控制台和一个 AI 对话。结果是：仓库和 issue 链接、官方文档、本地地址保留，控制台和对话链接整句删除；交接逐项列出完整原链接，`git diff --stat` 只有 README 和架构文档。这次没有误报 `docs/adr/` 缺失。
+
+#### 精简标准（0.0.2 的历史试跑）
 
 在隔离项目根目录用 `claude -p --model claude-sonnet-5-5 --permission-mode acceptEdits --plugin-dir <插件源码目录> --add-dir <插件源码目录> -- '<技能调用和请求>'` 显式调用 `/repo-craft:maintain-docs-and-rules`。14 次独立会话均由 Claude Code 2.1.322 加载 `repo-craft@inline` 源码，退出码均为 0。维护和审查使用同一初始提交的不同副本，样例一开始已有全部固定文档和旧 ADR。
 
@@ -98,10 +118,11 @@
 
 模板或技能正文之后又改过、对应样例没有重跑的地方：
 
-- 本次空项目覆盖了现行两份模板的完整写入。有清单和包的初始化样例、局部规则入口能否促使模型先读贡献指南的对照实验，均未按新模板重跑。
-- 本次旧模板样例覆盖新增小节和扩充的入口名单。更早样例里的项目专有规则、相似规则和冲突逐条询问，未按新合并规则重跑。
+- 外部链接样例覆盖了以下允许类别：公开官方文档、法规、项目自有代码仓库及其 issue、本地开发地址。公开标准和设计系统文档、项目自有的部署主机只核对了规则文本。措辞修订后只重跑了维护场景；初始化、只读审查、同提示再次维护和 0.0.2 模板升级用的是修订前的条款，尚未重跑。
+- 0.0.2 的空项目试跑覆盖当时两份模板的完整写入。0.0.3 未重跑空项目、有清单和包的初始化样例，以及局部规则入口能否促使模型先读贡献指南的对照实验。
+- 0.0.2 从更早模板升级时覆盖了新增小节和扩充入口名单。0.0.3 未重跑该升级路径、项目专有规则、相似规则或真实冲突的逐条询问。
 - 按 0.4.0 技能正文：`maintain-docs-and-rules` 的四处约束索引相关修改只由一个样例覆盖；“拟舍弃的内容是现行约束时不动它”和“有效性存疑时不改条目状态”两处没有出现对应情形，有索引的项目上也没有试规则部分。
-- 旧组织完全转换样例没有按精简标准重跑。本次没有试约束索引下的重组、受索引保护的 ADR、受生成器管理的区域、已有 ADR 改名及外部工具约定路径的例外。Codex 上未重跑本次四个行为场景。
+- 0.0.3 未重跑精简标准的完整样例，包括混合段落和旧 ADR 的取舍、术语与暂缓事项归位。旧组织完全转换、约束索引下的重组、受索引保护的 ADR、受生成器管理的区域、已有 ADR 改名及外部工具约定路径的例外仍未按现行标准验证。Codex 上未重跑精简标准和外部链接场景。
 
 `constraint-manager`：
 
