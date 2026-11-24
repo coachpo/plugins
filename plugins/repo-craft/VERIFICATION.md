@@ -13,7 +13,7 @@
 
 ### 打包与宿主发现
 
-- 0.0.3 在仓库根运行 `claude plugin validate plugins/repo-craft` 和 `claude plugin validate .`，均输出 `✔ Validation passed`。同次运行 `python3 ~/.claude/plugins/marketplaces/claude-plugins-official/plugins/skill-creator/skills/skill-creator/scripts/quick_validate.py plugins/repo-craft/skills/maintain-docs-and-rules`，输出 `Skill is valid!`。解析两份清单确认版本均为 `0.0.3`。
+- 0.0.4 在仓库根运行 `claude plugin validate plugins/repo-craft`，输出 `✔ These checks found nothing to report` 和 `✔ Validation passed`。`claude plugin validate .` 输出 `✔ Validation passed`。`python3 ~/.claude/plugins/marketplaces/claude-plugins-official/plugins/skill-creator/skills/skill-creator/scripts/quick_validate.py plugins/repo-craft/skills/maintain-docs-and-rules` 输出 `Skill is valid!`。解析两份清单确认版本均为 `0.0.4`。
 - 两份插件清单均可解析，共有字段逐项相同。Claude Code 要求 512 至 2048 像素的正方形 PNG 图标，`assets/icon.png` 是由 `assets/repo-craft.svg` 渲染的 1024 × 1024 版本；`.claude-plugin/plugin.json` 的 `icon` 只供官方目录展示，Claude Code 加载时不读。Codex 的 `logo` 和 `composerIcon` 使用 SVG（正方形 128 × 128）。
 - Codex CLI 0.167.0 添加本地市场后，`codex plugin list` 列出 `repo-craft@coachpo`。
 - Skill Creator 的 `quick_validate.py` 对 `constraint-manager`、`maintain-docs-and-rules`、`investigate-repo` 通过。`polish-prompt` 因 `disable-model-invocation` 不在该校验器接受的通用字段内而失败：这个字段是 Claude Code 仅显式调用所需的，保留不改。
@@ -25,6 +25,22 @@
 - `repo-craft:repo-researcher` 可被委派：只用 `Read`、`Grep`、`Glob`，返回带路径和行号的结论、冲突和未搜索范围；主 agent 重读了其中的关键证据。
 
 ### `maintain-docs-and-rules`
+
+#### 多单元仓库（0.0.4）
+
+在两个真实多应用仓库的主工作区，按下文外部链接试跑的命令格式运行，模型为 `claude-sonnet-5-5`，没有加 `--no-session-persistence` 和 `--strict-mcp-config`。初始化事件确认加载的是 `repo-craft@inline` 0.0.4。会话可以用 Edit、Write、只读 Git 命令、`git mv` 和 `rg`，不能运行 Python 或 Node，因此链接、锚点和模板条款由会话外的脚本核对。提示要求整理文档和各级 `AGENTS.md`：授权、环境、生产标识与凭据条款只能换位置或去重；须询问的事项列为待确认，不执行；不提交。
+
+- 仓库 A：pnpm workspace，含三个应用和一个共享包。文档原本已按应用分层：每个应用有 README，部分应用另有架构文档、贡献指南、局部规则、专题和 ADR 目录。
+- 仓库 B：npm workspaces，含三个应用和一个共享包。只涉及单个应用的专题、ADR 和运维内容原本都在根 `docs/`。
+
+| 场景 | 结果 |
+| --- | --- |
+| A 整套维护 | 改了 4 个文件，新增 4 行、删除 11 行。单元文档和应用 ADR 都留在原处。根贡献指南的两条项目补充按等义规则换成新模板条款，并加了指向两份单元贡献指南的链接。局部规则删了两条复述，其中被删的环境约束仍保留在单元贡献指南里。两份模板条款逐字保留、顺序不变，430 条相对链接全部能解析。另外删了几处空行。 |
+| B 整套维护 | 5 份专题和 8 份 ADR 迁入两个应用目录。运维手册拆成根和两个单元三份，贡献指南拆出三份单元指南，只涉及单个应用的产品缺口移到对应单元的 README。迁移的专题去掉链接目标后与原文逐行一致；原有文档的每一行，要么能在新文档里逐字找到，要么只是改写了入口句。非 Markdown 文件只改了注释和 OpenAPI 描述里的路径。403 条相对链接全部能解析。新建的一份单元贡献指南重复了一条冒烟测试命令，已人工删除。 |
+| B 暴露的问题 | 实例开通和版本升级被归到一个单元的手册里。但这个单元的 Worker 同时托管另一个应用的静态资源，升级顺序也受第三个应用约束。原因是两层结构表中根运维文档一格写成了“新增或下线单元”。此外，根架构文档逐篇列出了单元专题，与单元 README 重复。 |
+| 修正后两个仓库各再维护一次 | 根运维文档一格改为“实例或整体部署的开通、升级与下线”，补充“一次部署同时发布多个单元属于整体部署”，并规定根架构文档只列单元入口。A 再次维护，没有任何改动。B 把开通、升级和 Worker 回退移回根手册，并同步更新所有引用；根 README 和架构文档只列单元入口。402 条相对链接全部能解析，模板条款仍逐字保留。不过 B 这次删掉了一句有效的贡献指引（提到执行环境中的组件技能），已人工恢复。 |
+
+四次运行都把须确认的事项列进了待确认，没有执行。
 
 #### 外部链接（0.0.3）
 
@@ -118,6 +134,7 @@
 
 模板或技能正文之后又改过、对应样例没有重跑的地方：
 
+- 0.0.4 的多单元规则只在两个真实仓库上跑过整套维护，每个仓库两次，都在 Claude Code 上、用同一模型。只维护点名的单元、记录分属根与单元的决定、按层只读审查都没有样例，Codex 上也没有运行。两个仓库的文档此前已按精简标准整理过，多单元场景下没有触发删除实施细节的规则。
 - 外部链接样例覆盖了以下允许类别：公开官方文档、法规、项目自有代码仓库及其 issue、本地开发地址。公开标准和设计系统文档、项目自有的部署主机只核对了规则文本。措辞修订后只重跑了维护场景；初始化、只读审查、同提示再次维护和 0.0.2 模板升级用的是修订前的条款，尚未重跑。
 - 0.0.2 的空项目试跑覆盖当时两份模板的完整写入。0.0.3 未重跑空项目、有清单和包的初始化样例，以及局部规则入口能否促使模型先读贡献指南的对照实验。
 - 0.0.2 从更早模板升级时覆盖了新增小节和扩充入口名单。0.0.3 未重跑该升级路径、项目专有规则、相似规则或真实冲突的逐条询问。
